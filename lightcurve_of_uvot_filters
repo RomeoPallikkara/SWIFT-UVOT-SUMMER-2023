@@ -1,0 +1,60 @@
+
+#Importing the important packages for the code
+from astropy.time import Time
+from astropy.io import fits
+import matplotlib.pyplot as plt
+
+
+#Importing the fits file containig all the details of the filter data.The filter_names list has the name of the filters in the order similar to that in the fits header.
+fits_file = '/home/romeo/Desktop/s50716+714/all_sky_images/uvotproduct/outfile_uvotproduct_all_filter'
+filter_names = ['b', 'u', 'v', 'uvw1', 'uvw2', 'uvm2']
+
+#corrections have been calculated based on the formula correction(A) = E(B-V)[aR+b] where each filter have the a and b values , R = 3.1 ,
+#a=[0.9994,0.9226,1.0075,0.4346,-0.0581,0.0773] , b=[1.10171,2.1019,0.0126,5.3286,8.4402,9.1784] are the a and b values of respective filters.
+corrections = [0.107936145, 0.127522372, 0.08059134500000001, 0.17156960200000002, 0.21228431300000006, 0.242043371]
+
+
+#extracting the data from the fits file
+with fits.open(fits_file) as hdul:
+    fig, axs = plt.subplots(2, 3, figsize=(12, 8))
+
+    for i, ax in enumerate(axs.flat):
+        hdu = hdul[i+1]
+        data = hdu.data  
+        time_met = data['MET']  
+        magnitude = data['MAG']  
+        filter_name = filter_names[i] 
+        error = data['MAG_ERR']
+        correction = corrections[i]
+
+        # Convert MET to MJD considering Swift launch time(51910 is the MJD corresponding to Jan 1 2001 00:00:00)
+        time_mjd = 51910 + time_met / (24 * 3600)
+        
+        #reddening correction applying to the magnitude
+        corrected_magnitude = magnitude + correction
+
+        # Plot reddening corrected magnitude vs time
+        #ax.errorbar(time_mjd, corrected_magnitude, yerr=error, fmt='o', color='red', marker='o', markersize=2, label='Reddening corrected Magnitude')
+        ax.scatter(time_mjd, corrected_magnitude,color='red', marker='.', label='Corrected Magnitude')
+        
+        # Plot original magnitude vs time
+        #ax.errorbar(time_mjd, magnitude, yerr=error, fmt='o', color='blue', marker='o', markersize=2, label='Magnitude')
+        ax.scatter(time_mjd, magnitude,color='black', marker='.', label='Magnitude')
+
+        ax.set_xlabel('Time (MJD)')
+        ax.set_ylabel('Magnitude')
+        ax.set_ylim(10, 15)
+        ax.set_title(f'Light Curve of {filter_name} filter')
+        ax.legend()
+
+        # Add grid lines
+        ax.grid(True)
+
+    # Adjust spacing between subplots
+    fig.tight_layout()
+
+    # Save the plot
+    # plt.savefig('/home/romeo/Desktop/s50716+714/reddening_correction/comparison_plot_MJD.png')
+
+    # Show the plot
+    plt.show()
