@@ -1,0 +1,57 @@
+#importing important python packages
+from astropy.io import fits
+import matplotlib.pyplot as plt
+from astropy.time import Time, TimeDelta
+
+fits_file = '/home/romeo/Desktop/s50716+714/all_sky_images/uvotproduct/outfile_uvotproduct_all_filter'
+filter_names = ['b', 'u', 'v', 'uvw1', 'uvw2', 'uvm2']
+corrections = [0.107936145, 0.127522372, 0.08059134500000001, 0.17156960200000002, 0.21228431300000006, 0.242043371]
+
+save_location = '/home/romeo/Desktop/s50716+714/reddening_correction/'
+
+with fits.open(fits_file) as hdul:
+    for i in range(6):
+        hdu = hdul[i+1]
+        data = hdu.data  
+        met = data['MET']  
+        magnitude = data['MAG']  
+        filter_name = filter_names[i] 
+        error = data['MAG_ERR']
+        correction = corrections[i]
+
+        corrected_magnitude = magnitude + correction
+
+        # Convert MET to MJD
+        mjd = 51910 + met / (24 * 3600)
+
+
+        fig, axs = plt.subplots(2, 1, figsize=(8, 10))
+
+        # Plot corrected magnitude vs MJD
+        #axs[0].errorbar(mjd, corrected_magnitude, yerr=error, fmt='+', color='red', markersize=7)
+        axs[0].scatter(mjd, corrected_magnitude,marker='+', color='red')        
+        axs[0].set_xlabel('time in MJD')
+        axs[0].set_ylabel('Reddening Corrected Magnitude')
+        axs[0].set_ylim(10, 15)
+        axs[0].set_title(f'Light Curve of {filter_name} (Reddening Corrected Magnitude)')
+        axs[0].grid(True)
+
+        # Plot original magnitude vs MJD
+        #axs[1].errorbar(mjd, magnitude, yerr=error, fmt='+', color='blue', markersize=7)
+        axs[1].scatter(mjd, magnitude,marker='+', color='blue')
+        axs[1].set_xlabel('time in MJD')
+        axs[1].set_ylabel('Magnitude')
+        axs[1].set_ylim(10, 15)
+        axs[1].set_title(f'Light Curve of {filter_name} (Magnitude)')
+        axs[1].grid(True)
+
+        # Adjust spacing between subplots
+        fig.tight_layout()
+
+        plt.show()
+        
+        # Save the plot
+        # plot_name = f'comparison_plot_of_filter_in_MJD_{filter_name}.png'
+        # save_path = save_location + plot_name
+        # plt.savefig(save_path)
+        # plt.close(fig)
