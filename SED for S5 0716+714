@@ -1,0 +1,192 @@
+#PLOTTING FLUX VS FREQUENCY
+
+#Importing all the important python packages
+import os
+from astropy.io import fits
+import matplotlib.pyplot as plt
+
+
+#The code takes one obs ID and plots the SED for the same.ObsID i have saved as 0**.fits in my directory.It opens one such obs ID and extracts the data for each filter and then plots SED.
+file_name = "069.fits"
+filter_paths = [
+    '/home/romeo/Desktop/s50716+714/b_filter_s50716+714/uvotmaghist/output_magnitude',
+    '/home/romeo/Desktop/s50716+714/u_filter_s50716+714/uvotmaghist/output_magnitude',
+    '/home/romeo/Desktop/s50716+714/v_filter_s50716+714/uvotmaghist/output_magnitude',
+    '/home/romeo/Desktop/s50716+714/uw1_filter_s50716+714/uvotmaghist/output_magnitude',
+    '/home/romeo/Desktop/s50716+714/uw2_filter_s50716+714/uvotmaghist/output_magnitude',
+    '/home/romeo/Desktop/s50716+714/um2_filter_s50716+714/uvotmaghist/output_magnitude'
+]
+filter_names = ['b', 'u', 'v', 'uvw1', 'uvw2', 'uvm2']
+#The frequency of filters have been calculated from the wavelength of the filters availiable in the SWIFT website.
+#wavelengths = [4392,3465,5468,2600,1928,2246] in amstrong units.f=c/wavelength
+freq_filters = [682587563752276.9, 865201898989899.0, 548267114118507.7,
+                1153047915384615.5, 1554940134854771.8, 1334783873552983.0]
+
+#corrections have been calculated based on the formula correction(A) = E(B-V)[aR+b] where each filter have the a and b values , R = 3.1 ,
+#a=[0.9994,0.9226,1.0075,0.4346,-0.0581,0.0773] , b=[1.10171,2.1019,0.0126,5.3286,8.4402,9.1784] are the a and b values of respective filters.
+corrections = [0.107936145, 0.127522372, 0.08059134500000001, 0.17156960200000002, 0.21228431300000006, 0.242043371]
+
+
+#extracting data from the multiple fits file to plot SED.This code will provide SED for the availiable filters for an obs ID.
+flux_values = []  # List to store the extracted flux values
+corrected_flux_values = []  # List to store the corrected flux values
+filter_labels = []  # List to store the filter labels for available filters
+
+# Define colors for each filter
+filter_colors = {'b': 'blue', 'u': 'orange', 'v': 'green', 'uvw1': 'red', 'uvw2': 'purple', 'uvm2': 'brown'}
+
+# Iterate through each filter path, filter name, frequency, and correction
+for path, filter_name, frequency, correction in zip(filter_paths, filter_names, freq_filters, corrections):
+    file_path = os.path.join(path, file_name)
+    if os.path.isfile(file_path):
+        with fits.open(file_path) as hdul:
+            # Check if the filter exists in the fits file
+            if 'FLUX_HZ' in hdul[1].data.names:
+                # Access the data array
+                data = hdul[1].data
+                # Extract the flux value from the data
+                flux_value = data['FLUX_HZ'][0]  # Assuming the flux value is in the column named 'FLUX_HZ'
+
+                # Apply reddening correction  (Corrected flux = flux * 10**(0.4 * correction)
+                reddening_correction = 10 ** (0.4 * correction )
+                corrected_flux_value = flux_value * reddening_correction
+
+                flux_values.append(flux_value)  # Append the flux value to the list
+                corrected_flux_values.append(corrected_flux_value)  # Append the corrected flux value to the list
+                filter_labels.append(filter_name)  # Append the filter label to the list
+
+    else:
+        print(f"File '{file_name}' does not exist in path: {path}")
+
+# Create a figure with two subplots
+fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+
+# Plot the flux values for each filter with the corresponding color and label
+for filter_name, flux_value, frequency in zip(filter_labels, flux_values, freq_filters):
+    ax1.scatter(frequency, flux_value, c=filter_colors[filter_name], label=filter_name)
+
+# Plot the reddening corrected flux values for each filter with the corresponding color and label
+for filter_name, corrected_flux_value, frequency in zip(filter_labels, corrected_flux_values, freq_filters):
+    ax2.scatter(frequency, corrected_flux_value, c=filter_colors[filter_name], label=filter_name)
+
+# Set y-axis and x-axis labels
+ax1.set_ylabel("Flux (mJy)")
+ax2.set_ylabel("Reddening corrected Flux (mJy)")
+ax1.set_xlabel("Frequency (Hz)")
+ax2.set_xlabel(" Frequency (Hz)")
+
+# Set plot titles
+ax1.set_title("Flux vs Frequency ")
+ax2.set_title("Reddening corrected Flux vs Frequency")
+
+# Add legend to the second subplot
+legend_elements = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=filter_colors[filter_name], markersize=5)
+                   for filter_name in filter_labels]
+ax2.legend(handles=legend_elements, labels=filter_labels, loc='best')
+
+# Adjust spacing between subplots
+plt.subplots_adjust(hspace=0.3)
+
+# Set the same y-axis limits for both subplots
+y_max = max(flux_values + corrected_flux_values)
+ax1.set_ylim(0, y_max * 1.2)
+ax2.set_ylim(0, y_max * 1.2)
+
+# Show the plot
+plt.show()
+
+
+
+
+
+
+
+#PLOTTING FLUX*FREQUENCY VS FREQUENCY
+
+#Importing packages
+import os
+from astropy.io import fits
+import matplotlib.pyplot as plt
+
+file_name = "069.fits"
+filter_paths = [
+    '/home/romeo/Desktop/s50716+714/b_filter_s50716+714/uvotmaghist/output_magnitude',
+    '/home/romeo/Desktop/s50716+714/u_filter_s50716+714/uvotmaghist/output_magnitude',
+    '/home/romeo/Desktop/s50716+714/v_filter_s50716+714/uvotmaghist/output_magnitude',
+    '/home/romeo/Desktop/s50716+714/uw1_filter_s50716+714/uvotmaghist/output_magnitude',
+    '/home/romeo/Desktop/s50716+714/uw2_filter_s50716+714/uvotmaghist/output_magnitude',
+    '/home/romeo/Desktop/s50716+714/um2_filter_s50716+714/uvotmaghist/output_magnitude'
+]
+filter_names = ['b', 'u', 'v', 'uvw1', 'uvw2', 'uvm2']
+freq_filters = [682587563752276.9, 865201898989899.0, 548267114118507.7,
+                1153047915384615.5, 1554940134854771.8, 1334783873552983.0]
+corrections = [0.107936145, 0.127522372, 0.08059134500000001,
+               0.17156960200000002, 0.21228431300000006, 0.242043371]
+R = 3.1
+
+flux_values = []  # List to store the extracted flux values
+corrected_flux_values = []  # List to store the corrected flux values
+filter_labels = []  # List to store the filter labels for available filters
+
+# Define colors for each filter
+filter_colors = {'b': 'blue', 'u': 'orange', 'v': 'green', 'uvw1': 'red', 'uvw2': 'purple', 'uvm2': 'brown'}
+
+# Iterate through each filter path, filter name, frequency, and correction
+for path, filter_name, frequency, correction in zip(filter_paths, filter_names, freq_filters, corrections):
+    file_path = os.path.join(path, file_name)
+    if os.path.isfile(file_path):
+        with fits.open(file_path) as hdul:
+            # Check if the filter exists in the fits file
+            if 'FLUX_HZ' in hdul[1].data.names:
+                # Access the data array
+                data = hdul[1].data
+                # Extract the flux value from the data
+                flux_value = data['FLUX_HZ'][0]  # Assuming the flux value is in the column named 'FLUX_HZ'
+
+                # Apply reddening correction
+                reddening_correction = 10 ** (0.4 * correction )
+                corrected_flux_value = flux_value * reddening_correction
+
+                flux_values.append(frequency * flux_value)  # Append the frequency * flux value to the list
+                corrected_flux_values.append(frequency * corrected_flux_value)  # Append the frequency * corrected flux value to the list
+                filter_labels.append(filter_name)  # Append the filter label to the list
+
+    else:
+        print(f"File '{file_name}' does not exist in path: {path}")
+
+# Create a figure with two subplots
+fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
+
+# Plot the flux values for each filter with the corresponding color and label
+for filter_name, flux_value, frequency in zip(filter_labels, flux_values, freq_filters):
+    ax1.scatter(frequency, flux_value, c=filter_colors[filter_name], label=filter_name)
+
+# Plot the corrected flux values for each filter with the corresponding color and label
+for filter_name, corrected_flux_value, frequency in zip(filter_labels, corrected_flux_values, freq_filters):
+    ax2.scatter(frequency, corrected_flux_value, c=filter_colors[filter_name], label=filter_name)
+
+# Set y-axis labels as "Frequency * Flux"
+ax1.set_ylabel("Frequency * Flux (mJy * Hz)")
+ax2.set_ylabel("Frequency * Reddening corrected Flux (mJy *Hz)")
+
+ax1.set_xlabel("Frequency (Hz)")
+ax2.set_xlabel(" Frequency (Hz)")
+# Set plot titles
+ax1.set_title("(Frequency * Flux) vs Frequency")
+ax2.set_title("(Frequency * Reddening corrected Flux) vs Frequency")
+
+# Add legend to the second subplot
+legend_elements = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=filter_colors[filter_name], markersize=5)
+                   for filter_name in filter_labels]
+ax2.legend(handles=legend_elements, labels=filter_labels, loc='best')
+
+# Adjust spacing between subplots
+plt.subplots_adjust(hspace=0.3)
+
+# Set the same y-axis limits for both subplots
+y_max = max(flux_values + corrected_flux_values)
+ax1.set_ylim(0, y_max * 1.2)
+ax2.set_ylim(0, y_max * 1.2)
+
+# Show the plot
+plt.show()
